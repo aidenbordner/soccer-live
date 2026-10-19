@@ -222,11 +222,13 @@ struct Seed {
             coach: Membership(teamId: team.id, userId: coach, role: .owner, displayName: "Coach", joinedAt: now.addingTimeInterval(-90 * 86_400), joinedVia: .created),
         ]
 
-        func play(_ game: Game, _ steps: [(TimeInterval, GameAction)]) {
+        /// Plays `steps` (seconds after kickoff, action) against `game` and stores the result.
+        func play(_ game: Game, _ steps: [(seconds: Int, action: GameAction)]) {
             var game = game
             var log: [GameEvent] = []
-            for (offset, action) in steps {
-                if let event = try? game.apply(action, at: game.scheduledAt.addingTimeInterval(offset), by: coach) {
+            for step in steps {
+                let time = game.scheduledAt.addingTimeInterval(TimeInterval(step.seconds))
+                if let event = try? game.apply(step.action, at: time, by: coach) {
                     log.append(event)
                 }
             }
