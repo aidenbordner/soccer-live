@@ -127,7 +127,7 @@ Minimum iOS: **18**. It brings broadcast push for Live Activities (one push reac
 ### Live Activities
 
 - **Fans:** "Follow on Lock Screen" on a live game. The activity subscribes to the game's broadcast channel; the function pushes on score, period or pause changes. Between those, the clock ticks on its own.
-- **Admins:** a Live Activity with interactive buttons (App Intents) for **Goal Us / Goal Them / Pause**, so the game can be run from the Lock Screen without unlocking.
+- **Admins:** a Live Activity with interactive buttons (App Intents) for **Goal Us / Goal Them / Pause**, so the game can be run from the Lock Screen. Lock Screen buttons can't show a confirm step themselves, so the Goal buttons open the app straight to the goal confirm sheet and number pad. Pause works in place.
 
 ### Push notifications
 
@@ -189,7 +189,7 @@ games/{gameId}/events/{eventId}   // append-only log
 - Big, glanceable score bug with team colors, `contentTransition(.numericText())` on score changes, and a short goal celebration (crest pulse, haptic).
 - Clock in monospaced digits that never jitters, with clear states: LIVE, HT, FT, PAUSED.
 - Event timeline with minute markers ("12' Goal, #7").
-- Sideline built for one thumb in sunlight: huge targets, high contrast, a confirm-free Goal button with a 5-second Undo toast.
+- Sideline built for one thumb in sunlight: huge targets and high contrast. Tapping Goal opens a confirm sheet with a big keypad for the scorer's jersey number (optional), so nothing reaches parents' phones by accident. A 5-second Undo toast follows as a second safety net.
 - The admin calls **Halftime** and **Full time** with a button (one confirm tap). The clock never stops by itself, because games often run short when the day is behind, such as 30-minute halves instead of 35. The second half picks up from when the first half actually ended.
 - Pre-game card ("Saturday 9:00 vs. Hornets, Field 3") and a final-score card parents can share.
 - Join flow that feels like magic: tap link, see the scoreboard. No forms.
