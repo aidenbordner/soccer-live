@@ -3,8 +3,8 @@ import SoccerBackend
 import SoccerModels
 import SwiftUI
 
-/// Running a game at the field. Built for one thumb in sunlight: huge targets, no confirmations,
-/// and a few seconds to undo a goal.
+/// Running a game at the field. Built for one thumb in sunlight: huge targets, a confirm sheet
+/// for goals with an optional jersey number, and a few seconds to undo a goal after that.
 ///
 /// Two panes when there's room (unfolded, iPad, landscape): scoreboard and controls on one side,
 /// the event log on the other. One column on a regular phone.
@@ -19,6 +19,7 @@ struct RunGameView: View {
     @State private var undoable: GameEvent?
     @State private var errorMessage: String?
     @State private var confirmingEnd = false
+    @State private var pendingGoal: PendingGoal?
 
     var body: some View {
         Group {
@@ -55,6 +56,18 @@ struct RunGameView: View {
             }
         }
         .animation(.snappy, value: undoable)
+        .sheet(item: $pendingGoal) { pending in
+            GoalSheet(
+                side: pending.side,
+                name: pending.side == .us ? team.name : game?.opponent.name ?? "Them",
+                shortName: pending.side == .us ? team.shortName : game?.opponent.shortName ?? "",
+                color: pending.side == .us ? Color(hex: team.colors.primary) : .gray,
+                minute: game.map { MatchClock.minuteMarker($0.matchTime(at: .now)) } ?? ""
+            ) { scorer in
+                pendingGoal = nil
+                Task { await goal(pending.side, scorer: scorer) }
+            }
+        }
         .navigationTitle(game.map { "vs \($0.opponent.name)" } ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't do that", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
@@ -95,10 +108,10 @@ struct RunGameView: View {
             case .live:
                 HStack(spacing: 12) {
                     BigButton("Goal \(team.shortName)", systemImage: "soccerball", color: Color(hex: team.colors.primary), height: 120) {
-                        await goal(.us)
+                        pendingGoal = PendingGoal(side: .us)
                     }
                     BigButton("Goal \(game.opponent.shortName)", systemImage: "soccerball", color: .gray, height: 120) {
-                        await goal(.them)
+                        pendingGoal = PendingGoal(side: .them)
                     }
                 }
                 HStack(spacing: 12) {
@@ -141,8 +154,8 @@ struct RunGameView: View {
         return game.periodCount == 2 ? "Halftime" : "End period"
     }
 
-    private func goal(_ side: Side) async {
-        if let event = await run(.goal(side)) {
+    private func goal(_ side: Side, scorer: String?) async {
+        if let event = await run(.goal(side, scorer: scorer)) {
             undoable = event
         }
     }
@@ -209,5 +222,126 @@ private struct UndoToast: View {
         .background(.regularMaterial, in: Capsule())
         .shadow(radius: 8, y: 4)
         .frame(maxWidth: 500)
+    }
+}
+
+struct PendingGoal: Identifiable {
+    let side: Side
+    var id: String { side.rawValue }
+}
+
+/// Confirms a goal before it reaches every parent's phone, with an optional jersey number.
+private struct GoalSheet: View {
+    let side: Side
+    let name: String
+    let shortName: String
+    let color: Color
+    let minute: String
+    let confirm: (_ scorer: String?) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var number = ""
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack(spacing: 12) {
+                TeamBadge(shortName: shortName, color: color, size: 44)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Goal, \(name)?").font(.title2.weight(.bold))
+                    Text(minute.isEmpty ? "Scorer's number is optional" : "At \(minute). Scorer's number is optional")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            Text(number.isEmpty ? "#" : "#\(number)")
+                .font(.system(size: 56, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(number.isEmpty ? .tertiary : .primary)
+                .contentTransition(.numericText())
+                .animation(.snappy, value: number)
+                .accessibilityLabel(number.isEmpty ? "No number entered" : "Number \(number)")
+
+            NumberPad(number: $number)
+
+            HStack(spacing: 12) {
+                Button(role: .cancel) {
+                    dismiss()
+                } label: {
+                    Text("Cancel")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.roundedRectangle(radius: 16))
+                Button {
+                    confirm(number.isEmpty ? nil : "#\(number)")
+                } label: {
+                    Text("Confirm goal")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 56)
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 16))
+                .tint(color)
+            }
+        }
+        .padding(20)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+/// A big phone-style keypad for jersey numbers, up to two digits.
+private struct NumberPad: View {
+    @Binding var number: String
+
+    private let rows = [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"], ["clear", "0", "delete"]]
+
+    var body: some View {
+        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+            ForEach(rows, id: \.self) { row in
+                GridRow {
+                    ForEach(row, id: \.self) { key in
+                        Button {
+                            press(key)
+                        } label: {
+                            Group {
+                                switch key {
+                                case "clear": Text("Clear").font(.headline)
+                                case "delete": Image(systemName: "delete.left").font(.title2)
+                                default: Text(key).font(.system(size: 30, weight: .semibold, design: .rounded))
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 58)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.roundedRectangle(radius: 14))
+                        .tint(Color.primary)
+                        .disabled(isDisabled(key))
+                    }
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: number)
+    }
+
+    private func isDisabled(_ key: String) -> Bool {
+        switch key {
+        case "clear", "delete": number.isEmpty
+        default: number.count >= 2
+        }
+    }
+
+    private func press(_ key: String) {
+        switch key {
+        case "clear": number = ""
+        case "delete": number = String(number.dropLast())
+        default:
+            guard number.count < 2 else { return }
+            // No leading zeros: "07" is just "7".
+            number = number == "0" ? key : number + key
+        }
     }
 }
