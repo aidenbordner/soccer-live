@@ -1,0 +1,14 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  soccerkit:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run SoccerKit tests
+        run: swift test --package-path SoccerKit
