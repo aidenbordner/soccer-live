@@ -203,6 +203,7 @@ Every screen uses SwiftUI size classes instead of fixed iPhone frames. The Sidel
 4. Firebase project, security rules, anonymous auth plus Sign in with Apple, invite links.
 5. Live Activities: the admin one first (no server needed), then the fan one plus the push function.
 6. Polish pass, then TestFlight to a few parents for a real Saturday game.
+7. **Later: Sentry** for crash reporting and error tracking (Aiden's pick). Sentry's free tier fits this size. The app will start it once at launch in `SoccerLiveApp`, report backend errors from the one place they're caught, and upload debug symbols from CI. To keep that easy, errors stay typed (`BackendError`, `GameActionError`) and no personal data, such as kids' names, goes into error messages.
 
 ## 8. What I need from you
 
