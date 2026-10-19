@@ -129,6 +129,10 @@ Minimum iOS: **18**. It brings broadcast push for Live Activities (one push reac
 - **Fans:** "Follow on Lock Screen" on a live game. The activity subscribes to the game's broadcast channel; the function pushes on score, period or pause changes. Between those, the clock ticks on its own.
 - **Admins:** a Live Activity with interactive buttons (App Intents) for **Goal Us / Goal Them / Pause**, so the game can be run from the Lock Screen without unlocking.
 
+### Push notifications
+
+Regular alerts for fans who aren't watching the Lock Screen: **kickoff**, **every goal**, **halftime** and **full time**, for example "⚽ Goal, Lightning! 2–1 (31')". The same Cloud Function that updates Live Activities sends these through Firebase Cloud Messaging (free). Each person picks which alerts they want per team, and nothing is sent for games they've muted. Admins get no alerts for games they're running.
+
 ### Getting the app to parents
 
 TestFlight with a public link is simplest. Builds expire after 90 days and the first external build goes through a short Apple review. An unlisted App Store listing is the step up later.
@@ -186,6 +190,7 @@ games/{gameId}/events/{eventId}   // append-only log
 - Clock in monospaced digits that never jitters, with clear states: LIVE, HT, FT, PAUSED.
 - Event timeline with minute markers ("12' Goal, #7").
 - Sideline built for one thumb in sunlight: huge targets, high contrast, a confirm-free Goal button with a 5-second Undo toast.
+- The admin calls **Halftime** and **Full time** with a button (one confirm tap). The clock never stops by itself, because games often run short when the day is behind, such as 30-minute halves instead of 35. The second half picks up from when the first half actually ended.
 - Pre-game card ("Saturday 9:00 vs. Hornets, Field 3") and a final-score card parents can share.
 - Join flow that feels like magic: tap link, see the scoreboard. No forms.
 
@@ -201,8 +206,9 @@ Every screen uses SwiftUI size classes instead of fixed iPhone frames. The Sidel
 2. App shell: onboarding (two doors), tabs, team switcher, all against a local fake backend.
 3. Scoreboard UI and the Sideline game screen, running a full game on the fake backend.
 4. Firebase project, security rules, anonymous auth plus Sign in with Apple, invite links.
-5. Live Activities: the admin one first (no server needed), then the fan one plus the push function.
+5. Live Activities and push notifications: the admin Live Activity first (no server needed), then the fan Live Activity, goal and kickoff alerts, and the push function that sends both.
 6. Polish pass, then TestFlight to a few parents for a real Saturday game.
+7. **Later: Sentry** for crash reporting and error tracking (Aiden's pick). Sentry's free tier fits this size. The app will start it once at launch in `SoccerLiveApp`, report backend errors from the one place they're caught, and upload debug symbols from CI. To keep that easy, errors stay typed (`BackendError`, `GameActionError`) and no personal data, such as kids' names, goes into error messages.
 
 ## 8. What I need from you
 

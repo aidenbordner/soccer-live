@@ -110,8 +110,12 @@ extension Game {
             result = event(.goal, side: side, scorer: scorer)
 
         case (.endPeriod, .live):
+            // Halftime and full time are always called by the admin, never by the clock, since
+            // kids' games rarely run to the scheduled length.
             clock.pause(at: now)
             result = event(period >= periodCount ? .final : .periodEnd)
+            completedPeriodsElapsed += clock.elapsedBeforeStart
+            clock = .stopped
             status = period >= periodCount ? .final : .intermission
 
         case (.startNextPeriod, .intermission):

@@ -1,0 +1,47 @@
+name: SoccerLive
+options:
+  bundleIdPrefix: com.aidenbordner
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+packages:
+  SoccerKit:
+    path: SoccerKit
+
+targets:
+  SoccerLive:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    dependencies:
+      - package: SoccerKit
+        product: SoccerModels
+      - package: SoccerKit
+        product: SoccerBackend
+      - package: SoccerKit
+        product: ScoreboardUI
+    settings:
+      base:
+        PRODUCT_NAME: Soccer Live
+        PRODUCT_BUNDLE_IDENTIFIER: com.aidenbordner.soccerlive
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Soccer Live
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        ENABLE_PREVIEWS: YES
+
+schemes:
+  SoccerLive:
+    build:
+      targets:
+        SoccerLive: all
+    run:
+      config: Debug

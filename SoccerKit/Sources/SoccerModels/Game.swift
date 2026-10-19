@@ -62,6 +62,9 @@ public struct Game: Codable, Hashable, Identifiable, Sendable {
     public var periodCount: Int
     public var periodMinutes: Int
     public var clock: ClockState
+    /// Time actually played in the periods already finished. Halves often run short when the
+    /// schedule is behind, so this is measured rather than assumed from `periodMinutes`.
+    public var completedPeriodsElapsed: TimeInterval
     public var score: Score
     public var updatedAt: Date
     public var updatedBy: UserID?
@@ -87,6 +90,7 @@ public struct Game: Codable, Hashable, Identifiable, Sendable {
         self.periodCount = defaults.periodCount
         self.periodMinutes = defaults.periodMinutes
         self.clock = .stopped
+        self.completedPeriodsElapsed = 0
         self.score = Score()
         self.updatedAt = createdAt
     }
@@ -95,10 +99,10 @@ public struct Game: Codable, Hashable, Identifiable, Sendable {
 
     public var isPaused: Bool { status == .live && !clock.running }
 
-    /// Seconds into the whole match, so the second half of a 25-minute-half game starts at 25:00.
+    /// Seconds into the whole match. The second half picks up where the first actually ended:
+    /// 30:00 if a 35-minute half was called early at 30.
     public func matchTime(at now: Date) -> TimeInterval {
-        let completedPeriods = max(0, period - 1)
-        return TimeInterval(completedPeriods) * periodLength + clock.elapsed(at: now)
+        completedPeriodsElapsed + clock.elapsed(at: now)
     }
 
     /// The short state label for the score bug.

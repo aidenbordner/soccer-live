@@ -12,3 +12,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run SoccerKit tests
         run: swift test --package-path SoccerKit
+
+  app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build for the iOS simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project SoccerLive.xcodeproj \
+            -scheme SoccerLive \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            | tail -n 200
