@@ -64,6 +64,30 @@ private func newGame(periodCount: Int = 2, periodMinutes: Int = 25) -> Game {
         #expect(game.updatedAt == at(65 * 60) && game.updatedBy == admin)
     }
 
+    @Test func shortHalfCarriesIntoTheSecondHalf() throws {
+        // Scheduled for 35-minute halves, but the first half is called at 30 because the day is running late.
+        var game = newGame(periodMinutes: 35)
+        _ = try game.apply(.kickoff, at: at(0), by: admin)
+        _ = try game.apply(.endPeriod, at: at(30 * 60), by: admin)
+        #expect(game.statusLabel == "HT")
+        #expect(game.matchTime(at: at(40 * 60)) == 30 * 60)
+
+        let second = try game.apply(.startNextPeriod, at: at(40 * 60), by: admin)
+        #expect(second.matchSecond == 30 * 60)
+
+        let goal = try game.apply(.goal(.us), at: at(45 * 60), by: admin)
+        #expect(goal.matchSecond == 35 * 60)
+        #expect(goal.minuteMarker == "36'")
+    }
+
+    @Test func clockKeepsRunningPastTheScheduledLength() throws {
+        var game = newGame(periodMinutes: 25)
+        _ = try game.apply(.kickoff, at: at(0), by: admin)
+        #expect(game.clock.running)
+        #expect(game.matchTime(at: at(28 * 60)) == 28 * 60)
+        #expect(game.status == .live)
+    }
+
     @Test func quarterBreaksAreLabelled() throws {
         var game = newGame(periodCount: 4, periodMinutes: 10)
         _ = try game.apply(.kickoff, at: at(0), by: admin)

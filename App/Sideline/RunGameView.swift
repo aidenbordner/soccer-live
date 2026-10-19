@@ -18,6 +18,7 @@ struct RunGameView: View {
     @State private var events: [GameEvent] = []
     @State private var undoable: GameEvent?
     @State private var errorMessage: String?
+    @State private var confirmingEnd = false
 
     var body: some View {
         Group {
@@ -106,7 +107,12 @@ struct RunGameView: View {
                     } else {
                         BigButton("Restart clock", systemImage: "play.fill", color: .green) { await run(.resume) }
                     }
-                    BigButton(endLabel(game), systemImage: "flag.checkered", color: .secondary) { await run(.endPeriod) }
+                    BigButton(endLabel(game), systemImage: "flag.checkered", color: .secondary) { confirmingEnd = true }
+                }
+                .confirmationDialog(endQuestion(game), isPresented: $confirmingEnd, titleVisibility: .visible) {
+                    Button(endLabel(game)) { Task { await run(.endPeriod) } }
+                } message: {
+                    Text("The clock stops at \(MatchClock.format(game.matchTime(at: .now))). The next period picks up from there.")
                 }
 
             case .intermission:
@@ -123,6 +129,11 @@ struct RunGameView: View {
         }
         .sensoryFeedback(.impact(weight: .heavy), trigger: game.score)
         .sensoryFeedback(.selection, trigger: game.status)
+    }
+
+    private func endQuestion(_ game: Game) -> String {
+        if game.period >= game.periodCount { return "End the game?" }
+        return game.periodCount == 2 ? "Call halftime?" : "End this period?"
     }
 
     private func endLabel(_ game: Game) -> String {
