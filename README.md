@@ -11,6 +11,7 @@ for parents who can't make it to the field, run by a team admin from the sidelin
 | Path | What it is |
 |---|---|
 | `SoccerKit/` | Swift package shared by the app: models, roles, invite codes, clock math. |
+| `docs/plan.md` | The overall plan: signup and roles, backend, data model, build order. |
 
 More (the app, Live Activity widgets, Firebase rules and functions) lands as it's built.
 
